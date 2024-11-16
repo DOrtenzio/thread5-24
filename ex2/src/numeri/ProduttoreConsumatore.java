@@ -3,33 +3,49 @@ package numeri;
 import java.util.concurrent.TimeUnit;
 
 public class ProduttoreConsumatore extends Thread {
-    private static int [] arr=new int[10];
+    private static int [] arr=new int[5];
     private static Integer lastP=-1;
-    private static Integer startC=-1;
+    private static Integer lastC =-1;
+    private static boolean isPrimaEsecuzione=true;
 
+    private final int velocita;
     private boolean isProduttore;
 
-    public ProduttoreConsumatore (boolean isProduttore) {
+    public ProduttoreConsumatore (boolean isProduttore, int velocita) {
         this.isProduttore=isProduttore;
+        this.velocita=velocita;
     }
 
     public void produco() {
         try {
             //Pausa
-            TimeUnit.SECONDS.sleep(1);
-            //Controllo se siamo alla fine dell'array
-            if (lastP+1==arr.length)
-                lastP-= arr.length;
-            //Produco
-            if(arr[lastP+1] == 0) {
-                arr[++lastP]++;
-                System.out.println("Ultimo prodotto: " + lastP);
+            TimeUnit.SECONDS.sleep(this.velocita);
+
+            if(lastC == lastP || (lastC-arr.length) == lastP){
+                synchronized (lastC){
+                    lastC.notify();
+                }
             }
-            //Controllo presenza di posizioni per scrittura o mi metto in attesa
-            if (lastP == startC && (lastP!=-1 && startC!=-1)) {
+
+            //Produco
+            if((lastP + 1) % arr.length != lastC) {
+                lastP=(lastP + 1) % arr.length;
+                arr[lastP]= (int) (Math.random()*10);
+                System.out.println("Ultimo prodotto in posizione: " + lastP +" prodotto: "+arr[lastP]);
+            } else{
+                lastP=(lastP + 1) % arr.length;
+                arr[lastP]= (int) (Math.random()*10);
+                System.out.println("Ultimo prodotto in posizione: " + lastP +" prodotto: "+arr[lastP]);
                 synchronized (lastP) {
                     lastP.wait();
                 }
+            }
+
+            if (isPrimaEsecuzione){
+                synchronized (lastC){
+                    lastC.notify();
+                }
+                isPrimaEsecuzione=false;
             }
         }catch(Exception e) {
             System.out.println(e);
@@ -39,19 +55,33 @@ public class ProduttoreConsumatore extends Thread {
     public void consumo() {
         try {
             //Pausa
-            TimeUnit.SECONDS.sleep(5);
-            //Controllo se siamo alla fine dell'array
-            if (startC+1==arr.length)
-                startC-= arr.length;
-            //Produco
-            if(arr[startC+1] == 1) {
-                arr[++startC]--;
-                System.out.println("Ultimo consumato: " + startC);
+            TimeUnit.SECONDS.sleep(this.velocita);
+
+            if (isPrimaEsecuzione){
+                synchronized (lastC){
+                    lastC.wait();
+                }
+                isPrimaEsecuzione=false;
             }
-            //Controllo presenza di posizioni per scrittura ed in caso risveglio chi si fosse messo in attesa
-            if (lastP == startC-1 || (lastP-arr.length) == startC-1) {
-                synchronized (lastP) {
-                    lastP.notify();
+
+            if(lastC == lastP || (lastP-arr.length) == lastC){
+                synchronized (lastC){
+                    lastC.notify();
+                }
+            }
+
+            //Consumo
+
+            if((lastC + 1) % arr.length != lastP) {
+                lastC = (lastC + 1) % arr.length;
+                arr[lastC]=-1;
+                System.out.println("\t\t\tUltimo consumato in posizione: " + lastC+" consumato: "+arr[lastC]);
+            }else{
+                lastC = (lastC + 1) % arr.length;
+                arr[lastC]=-1;
+                System.out.println("\t\t\tUltimo consumato in posizione: " + lastC+" consumato: "+arr[lastC]);
+                synchronized (lastC){
+                    lastC.wait();
                 }
             }
         }catch(Exception e) {
