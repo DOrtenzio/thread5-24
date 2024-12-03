@@ -1,10 +1,9 @@
-# thread5-24
-Wait e notify ----- Consumatore e produttore
+### Wait e notify ----- Consumatore e produttore
 
 
 > [!WARNING]
 > Il codice funziona solo se:
 > consumatore.velocità <> produttore.velocità
-> -----> Quindi non funziona solo, infatti funziona solo in parte, se le velocità sono uguali.
+> -----> Se le velocità sono uguali tra produttore e consumatore si incorre in un deadlock
 
-Non so come corregerlo quindi lo lascerò così, sorry.
+Non so come corregerlo, sorry.
